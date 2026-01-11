@@ -16,6 +16,13 @@ where $r$ is the step length and $\sigma > 0$ is the Lévy exponent that control
 
 Lévy flights play an important role in various physical and biological systems, such as anomalous diffusion, turbulent transport, and search processes.
 
+- `src_demo`: Fix the distance $R$, and measure how many steps are taken.  
+
+- `src_n_site`: Fix the number of steps $N$, and measure the end-to-end distance as well as the range of the random walk (i.e., how many sites are visited after $N$ steps).  
+
+- `src_chi_k`: Use a lattice with periodic boundary conditions (PBC). Fix the number of steps to $L^d$, and measure the effective susceptibility $\chi_k$.
+
+
 ---
 
 ## How to use
