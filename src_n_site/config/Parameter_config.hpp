@@ -13,22 +13,65 @@ struct Parameter
     unsigned long NperBin;
 
     // Model Parameters
-    int D, L;  // dimension and step
+    int D, N;  // dimension and step
     double sigma; // decay exponent
 
-    //=================================
-    // a = 1/8, 2/8, 3/8, 4/8, 5/8, 6/8, 7/8, 8/8
-
     // Observable label
-    int i_chi_k_1, i_chi_k_2, i_chi_k_3, i_chi_k_4, i_chi_k_5, i_chi_k_6, i_chi_k_7, i_chi_k_8;
-    int i_corr_L_1, i_corr_L_2, i_corr_L_3, i_corr_L_4, i_corr_L_5, i_corr_L_6, i_corr_L_7, i_corr_L_8;
-    int i_dist_wrap_1, i_dist_wrap_2, i_dist_wrap_3, i_dist_wrap_4, i_dist_wrap_5, i_dist_wrap_6, i_dist_wrap_7, i_dist_wrap_8;
-    int i_dist_unwrap_1, i_dist_unwrap_2, i_dist_unwrap_3, i_dist_unwrap_4, i_dist_unwrap_5, i_dist_unwrap_6, i_dist_unwrap_7, i_dist_unwrap_8;
-    int i_nsite_1, i_nsite_2, i_nsite_3, i_nsite_4, i_nsite_5, i_nsite_6, i_nsite_7, i_nsite_8;
+    int i_R_1e1, i_R2_1e1;
+    int i_R_1e2, i_R2_1e2;
+    int i_R_1e3, i_R2_1e3;
+    int i_R_1e4, i_R2_1e4;
+    int i_R_1e5, i_R2_1e5;
+    int i_R_1e6, i_R2_1e6;    // R ~ 1024
+    int i_R_1e7, i_R2_1e7;    
+    int i_R_1e8, i_R2_1e8;    
+    int i_R_1e9, i_R2_1e9;    
+    int i_R_1e10, i_R2_1e10;  
+    
+    int i_ns_1e1, i_ns2_1e1;
+    int i_ns_1e2, i_ns2_1e2;
+    int i_ns_1e3, i_ns2_1e3;
+    int i_ns_1e4, i_ns2_1e4;
+    int i_ns_1e5, i_ns2_1e5;
+    int i_ns_1e6, i_ns2_1e6;    // ns ~ 1024
+    int i_ns_1e7, i_ns2_1e7;    
+    int i_ns_1e8, i_ns2_1e8;    
+    int i_ns_1e9, i_ns2_1e9;    
+    int i_ns_1e10, i_ns2_1e10;  
 
-    int i_dist_wrap2_1, i_dist_wrap2_2, i_dist_wrap2_3, i_dist_wrap2_4, i_dist_wrap2_5, i_dist_wrap2_6, i_dist_wrap2_7, i_dist_wrap2_8;
-    int i_dist_unwrap2_1, i_dist_unwrap2_2, i_dist_unwrap2_3, i_dist_unwrap2_4, i_dist_unwrap2_5, i_dist_unwrap2_6, i_dist_unwrap2_7, i_dist_unwrap2_8;
-    int i_nsite2_1, i_nsite2_2, i_nsite2_3, i_nsite2_4, i_nsite2_5, i_nsite2_6, i_nsite2_7, i_nsite2_8;
+    int i_Mn_1e1;
+    int i_Mn_1e2;
+    int i_Mn_1e3;
+    int i_Mn_1e4;
+    int i_Mn_1e5;
+    int i_Mn_1e6;    // Mn ~ 1024
+    int i_Mn_1e7;    
+    int i_Mn_1e8;    
+    int i_Mn_1e9;    
+    int i_Mn_1e10;  
+
+    int i_Pn_1e1;
+    int i_Pn_1e2;
+    int i_Pn_1e3;
+    int i_Pn_1e4;
+    int i_Pn_1e5;
+    int i_Pn_1e6;    // Pn ~ 1024
+    int i_Pn_1e7;    
+    int i_Pn_1e8;    
+    int i_Pn_1e9;    
+    int i_Pn_1e10;  
+
+    int i_r_1e1, i_r2_1e1;
+    int i_r_1e2, i_r2_1e2;
+    int i_r_1e3, i_r2_1e3;
+    int i_r_1e4, i_r2_1e4;
+    int i_r_1e5, i_r2_1e5;
+    int i_r_1e6, i_r2_1e6;    // r ~ 1024
+    int i_r_1e7, i_r2_1e7;
+    int i_r_1e8, i_r2_1e8;
+    int i_r_1e9, i_r2_1e9;
+    int i_r_1e10, i_r2_1e10;
+    
 
     // Distribution label
 

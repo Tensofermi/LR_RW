@@ -28,13 +28,6 @@ inline int pbc_mod(int _a, int _L)
 }
 
 
-inline int pbc_mod_v2(int _a, int _L)
-{
-    int res = _a % _L;
-    return (res < 0) ? (res + _L) : res;
-}
-
-
 // 将角度规范化到 [-π, π) 范围
 inline double normalizeAngle(double angle) {
     // 如果角度大于或等于 π，则减去 2π

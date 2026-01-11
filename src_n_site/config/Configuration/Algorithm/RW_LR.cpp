@@ -1,130 +1,265 @@
 #include "../Configuration.hpp"
 
+// Generate a random direction on a unit sphere
+void Configuration::randSphere(std::vector<double>& dx)
+{
+    const int dx_size = dx.size();
+    const double epsilon = 1e-16;
+
+    if (dx_size == 1)
+    {
+        dx[0] = (rn.getRandomDouble() > 0.5) ? 1.0 : -1.0;
+        return;
+    }
+    if (dx_size == 2)
+    {
+        // 2D: sample angle theta uniformly from [0, 2pi)
+        double theta = 2.0 * M_PI * rn.getRandomDouble();
+        dx[0] = cos(theta);
+        dx[1] = sin(theta);
+        return;
+    }
+    if (dx_size == 3)
+    {
+        // 3D: sample phi in [0, 2pi), costheta in [-1, 1]
+        double phi = 2.0 * M_PI * rn.getRandomDouble();
+        double costheta = 2.0 * rn.getRandomDouble() - 1.0;
+        double sintheta = sqrt(1.0 - costheta * costheta);
+        dx[0] = sintheta * cos(phi);
+        dx[1] = sintheta * sin(phi);
+        dx[2] = costheta;
+        return;
+    }
+
+    // General case: Gaussian sampling and normalization
+    double lengthSquared;
+    do {
+        lengthSquared = 0.0;
+        for (int i_N = 0; i_N < dx_size; ++i_N) {
+            dx[i_N] = rn.getGaussian();
+            lengthSquared += dx[i_N] * dx[i_N];
+        }
+    } while (lengthSquared < epsilon);
+
+    const double length = std::sqrt(lengthSquared);
+    for (int i_N = 0; i_N < dx_size; ++i_N) {
+        dx[i_N] /= length;
+    }
+}
+
 // Main function for Long-Range Random Walk (RW_LR)
 void Configuration::RW_LR()
 {
-    double u, v, w, dx, dy;
-    double factor;
-    double r0 = 0.5 * sqrt(2.0);  // to reach the NN case as sigma -> infinity
-    
-    double mk_c, mk_s;
-    std::vector<double> d_u_now = {0, 0};
-    double d_w_max_now, d_u_max_now;
-    double d_w_max, d_u_max;
-    
-    std::array<int, 2> pos;
+    std::vector<double> dx;
+    double r_;
+    double r0 = 0.5 * std::sqrt(Dim);  // to reach the NN case as sigma -> infinity
 
-    const std::vector<double> thresholds = {
-        1.0 / 8.0 * N_max, 2.0 / 8.0 * N_max, 3.0 / 8.0 * N_max, 4.0 / 8.0 * N_max, 
-        5.0 / 8.0 * N_max, 6.0 / 8.0 * N_max, 7.0 / 8.0 * N_max, 8.0 / 8.0 * N_max
+    // Current radius and maximum radius encountered
+    double R_now, R_max = 0;
+
+    double r = 0; 
+    double r2 = 0;
+
+    //_______________________________________________________________________________
+    // List of step-length thresholds (record max radius when reaching each threshold)
+    const std::vector<long long> thresholds = {
+        10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000, 10000000000
     };
 
-    const std::vector<int> chi_k_indices = {
-        para.i_chi_k_1, para.i_chi_k_2, para.i_chi_k_3, para.i_chi_k_4, para.i_chi_k_5, 
-        para.i_chi_k_6, para.i_chi_k_7, para.i_chi_k_8
+    // Indices in obs.Ob corresponding to each threshold (must match obs.Ob)
+    const std::vector<int> R_indices = {
+        para.i_R_1e1, para.i_R_1e2, para.i_R_1e3, para.i_R_1e4, para.i_R_1e5,
+        para.i_R_1e6, para.i_R_1e7, para.i_R_1e8, para.i_R_1e9, para.i_R_1e10
     };
-        
-    const std::vector<int> dist_wrap_indices = {
-        para.i_dist_wrap_1, para.i_dist_wrap_2, para.i_dist_wrap_3, para.i_dist_wrap_4, para.i_dist_wrap_5, 
-        para.i_dist_wrap_6, para.i_dist_wrap_7, para.i_dist_wrap_8
+
+    // Indices in obs.Ob corresponding to each threshold (must match obs.Ob)
+    const std::vector<int> ns_indices = {
+        para.i_ns_1e1, para.i_ns_1e2, para.i_ns_1e3, para.i_ns_1e4, para.i_ns_1e5,
+        para.i_ns_1e6, para.i_ns_1e7, para.i_ns_1e8, para.i_ns_1e9, para.i_ns_1e10
     };
-    
-    const std::vector<int> dist_unwrap_indices = {
-        para.i_dist_unwrap_1, para.i_dist_unwrap_2, para.i_dist_unwrap_3, para.i_dist_unwrap_4, para.i_dist_unwrap_5, 
-        para.i_dist_unwrap_6, para.i_dist_unwrap_7, para.i_dist_unwrap_8
+
+    // Indices in obs.Ob corresponding to each threshold (must match obs.Ob)
+    const std::vector<int> Mn_indices = {
+        para.i_Mn_1e1, para.i_Mn_1e2, para.i_Mn_1e3, para.i_Mn_1e4, para.i_Mn_1e5,
+        para.i_Mn_1e6, para.i_Mn_1e7, para.i_Mn_1e8, para.i_Mn_1e9, para.i_Mn_1e10
     };
-    
-    const std::vector<int> nsite_indices = {
-        para.i_nsite_1, para.i_nsite_2, para.i_nsite_3, para.i_nsite_4, para.i_nsite_5, 
-        para.i_nsite_6, para.i_nsite_7, para.i_nsite_8
+
+    // Indices in obs.Ob corresponding to each threshold (must match obs.Ob)
+    const std::vector<int> Pn_indices = {
+        para.i_Pn_1e1, para.i_Pn_1e2, para.i_Pn_1e3, para.i_Pn_1e4, para.i_Pn_1e5,
+        para.i_Pn_1e6, para.i_Pn_1e7, para.i_Pn_1e8, para.i_Pn_1e9, para.i_Pn_1e10
+    };
+
+    const std::vector<int> r_indices = {
+        para.i_r_1e1, para.i_r_1e2, para.i_r_1e3, para.i_r_1e4, para.i_r_1e5,
+        para.i_r_1e6, para.i_r_1e7, para.i_r_1e8, para.i_r_1e9, para.i_r_1e10
+    };
+
+    const std::vector<int> r2_indices = {
+        para.i_r2_1e1, para.i_r2_1e2, para.i_r2_1e3, para.i_r2_1e4, para.i_r2_1e5,
+        para.i_r2_1e6, para.i_r2_1e7, para.i_r2_1e8, para.i_r2_1e9, para.i_r2_1e10
     };
 
     // Flags to mark whether each threshold has been recorded
-    std::vector<bool> flags(thresholds.size(), false);
+    std::vector<bool> flags(thresholds.size(), false);  
     //_______________________________________________________________________________
 
     // Initialize the walker's head position to 0 and length to 0
-    std::fill(string_head.begin(), string_head.end(), xc);
+    std::fill(string_head.begin(), string_head.end(), 0);
     length_string = 0;
-    mk_c = 0; 
-    mk_s = 0;
-    d_w_max_now = 0.0;
-    d_u_max_now = 0.0;
-    d_u_max = 0.0;
-    d_w_max = 0.0;
-    
+    dx.resize(Dim, 0);
     N_range = 1;
+    double Mn = 0;
+    bool Pn = false;
+    if (Dim == 1)
+    {
+        visited_1D.clear();
+        visited_1D.insert(string_head[0]);
+    }
+    else if (Dim == 2)
+    {
+        visited_2D.clear();
+        std::array<int, 2> pos;
+        pos[0] = string_head[0];
+        pos[1] = string_head[1];
+        visited_2D.insert(pos);
+    }
+    else if (Dim == 3)
+    {
+        visited_3D.clear();
+        std::array<int, 3> pos;
+        pos[0] = string_head[0];
+        pos[1] = string_head[1];
+        pos[2] = string_head[2];
+        visited_3D.insert(pos);
+    }
+    else if (Dim == 4)
+    {
+        visited_4D.clear();
+        std::array<int, 4> pos;
+        pos[0] = string_head[0];
+        pos[1] = string_head[1];
+        pos[2] = string_head[2];
+        pos[3] = string_head[3];
+        visited_4D.insert(pos);
+    }
+    else if (Dim == 5)
+    {
+        visited_5D.clear();
+        std::array<int, 5> pos;
+        pos[0] = string_head[0];
+        pos[1] = string_head[1];
+        pos[2] = string_head[2];
+        pos[3] = string_head[3];
+        pos[4] = string_head[4];
+        visited_5D.insert(pos);
+    }
 
-    visited_2D.clear();
-    pos[0] = string_head[0];
-    pos[1] = string_head[1];
-    // pos[0] = d_u_now[0];
-    // pos[1] = d_u_now[1];
-    visited_2D.insert(pos);
 
-    // Main loop: perform random walk until reaching the maximum number of steps N_max
+    // Main loop: perform long-range random walk until reaching the maximum number of steps N_max
     while (true)
     {
         //_________________________________________________________________________
-        // Step 1: Propose a new position (LR case)
+        // Step 1: Propose a new position (long-range case)
         //_________________________________________________________________________
-        while (true)
+
+        // Randomly choose distance
+        r_ = rn.getRandomDouble();
+        r_ = (r_ == 0.0) ? 1.0 : r_; // Ensure r is not zero
+        r_ = pow(r_, -1.0 / Sigma);
+
+        // Randomly choose direction
+        randSphere(dx);
+
+        // Apply for lattice (discretize the step)
+        for (size_t i = 0; i < dx.size(); ++i)
         {
-            u = rn.getRandomDouble();
-            v = rn.getRandomDouble(); 
-            u = (u == 0.0) ? 1.0 : u; // Ensure u, v are not zero
-            v = (v == 0.0) ? 1.0 : v;
-            w = u * u + v * v;
-            if(w < 1.0) break;      
+            dx[i] = (long long)floor(r0 * r_ * dx[i] + 0.5); // Move in x direction
         }
 
-        factor = 1.0 / pow(w, 0.5 + 1.0 / Sigma);
-
-        dx = (int)floor(r0 * u * factor + 0.5); // Move in x direction
-        dy = (int)floor(r0 * v * factor + 0.5); // Move in y direction
-
-        if(rn.getRandomDouble() < 0.5) dx = -dx; // Randomly flip x direction
-        if(rn.getRandomDouble() < 0.5) dy = -dy; // Randomly flip y direction
-
-        string_head[0] += dx;
-        string_head[1] += dy;
-
-        // Update the current distance measures
-        d_u_now[0] += dx;
-        d_u_now[1] += dy;
-
-        d_u_max_now = std::max(d_u_now[0], d_u_now[1]);
-        if(d_u_max_now > d_u_max) {
-            d_u_max = d_u_max_now;
-        }
-        
-        // for pbc
-        string_head[0] = pbc_mod_v2(string_head[0], L);
-        string_head[1] = pbc_mod_v2(string_head[1], L);
-
-        d_w_max_now = std::max(string_head[0] - xc, string_head[1] - yc);
-        if(d_w_max_now > d_w_max) {
-            d_w_max = d_w_max_now;
+        // Propose this new position
+        for (size_t i = 0; i < string_head.size(); ++i) {
+            string_head[i] += dx[i];
         }
 
-        // count range 
-        pos[0] = string_head[0];
-        pos[1] = string_head[1];
-        // pos[0] = d_u_now[0];
-        // pos[1] = d_u_now[1];
-        visited_2D.insert(pos);
-        N_range = visited_2D.size();
-        // std::cout<<N_range<<std::endl;
+        // Insert the new position into the visited set and update N_range
+        if (Dim == 1)
+        {
+            visited_1D.insert(string_head[0]);
+            N_range = visited_1D.size();
+        }
+        else if (Dim == 2)
+        {
+            std::array<int, 2> pos;
+            pos[0] = string_head[0];
+            pos[1] = string_head[1];
+            visited_2D.insert(pos);
+            N_range = visited_2D.size();
+        }
+        else if (Dim == 3)
+        {
+            std::array<int, 3> pos;
+            pos[0] = string_head[0];
+            pos[1] = string_head[1];
+            pos[2] = string_head[2];
+            visited_3D.insert(pos);
+            N_range = visited_3D.size();
+        }
+        else if (Dim == 4)
+        {
+            std::array<int, 4> pos;
+            pos[0] = string_head[0];
+            pos[1] = string_head[1];
+            pos[2] = string_head[2];
+            pos[3] = string_head[3];
+            visited_4D.insert(pos);
+            N_range = visited_4D.size();
+        }
+        else if (Dim == 5)
+        {
+            std::array<int, 5> pos;
+            pos[0] = string_head[0];
+            pos[1] = string_head[1];
+            pos[2] = string_head[2];
+            pos[3] = string_head[3];
+            pos[4] = string_head[4];
+            visited_5D.insert(pos);
+            N_range = visited_5D.size();
+        }
 
-        //_________________________________________________________________________
+        // Check if the walker returns to the origin
+        bool at_origin = true;
+        double r2_now = 0;
+        for (size_t i = 0; i < string_head.size(); ++i) {
+            // r2_now += string_head[i] * string_head[i];
+            
+            if (string_head[i] != 0) {
+                at_origin = false;
+            }
+        }
+
+        if (at_origin) {
+            Mn += 1;
+            Pn = true;
+        }
+
+        r2 += r2_now;
+        // r += sqrt(r2_now);
+
         // Step 2: Increase the walk length
-        //_________________________________________________________________________
         length_string++;
-        
-        // mk_c += k_cos[string_head[0]];
-		// mk_s += k_sin[string_head[0]];
-        mk_c += cos(2 * M_PI / (double)L * (string_head[0] - xc));
-		mk_s += sin(2 * M_PI / (double)L * (string_head[0] - xc));
+
+        // Calculate the current distance from the origin and update the maximum radius
+        R_now = 0;
+        for (size_t i = 0; i < string_head.size(); ++i) {
+            R_now += string_head[i] * string_head[i];
+        }
+        R_now = std::sqrt(R_now);
+        if (R_now > R_max) R_max = R_now;
+
+        double max_now = *std::max_element(string_head.begin(), string_head.end());
+        // double max_now = sqrt(r2_now);
+        if (max_now > R_max) R_max = max_now;
 
         //_________________________________________________________________________
         // Step 3: Check if any step-length threshold is reached, record max radius if so
@@ -132,10 +267,13 @@ void Configuration::RW_LR()
         for (size_t i = 0; i < thresholds.size(); ++i) {
             if (!flags[i] && length_string >= thresholds[i]) {
                 flags[i] = true;                  // Mark as recorded
-                obs.Ob[chi_k_indices[i]] = mk_c * mk_c + mk_s * mk_s;     // Record the maximum radius
-                obs.Ob[dist_wrap_indices[i]] = d_w_max;
-                obs.Ob[dist_unwrap_indices[i]] = d_u_max;       // Record the number of returns to origin
-                obs.Ob[nsite_indices[i]] = N_range; // Record the probability of return to origin
+                obs.Ob[R_indices[i]] = R_max;     // Record the maximum radius
+                obs.Ob[ns_indices[i]] = N_range;
+                obs.Ob[Mn_indices[i]] = Mn;       // Record the number of returns to origin
+                obs.Ob[Pn_indices[i]] = Pn ? 1.0 : 0.0; // Record the probability of return to origin
+
+                obs.Ob[r_indices[i]] = 0;         // Record the average distance from origin
+                obs.Ob[r2_indices[i]] = r2 / (double) length_string;       // Record the average squared distance
 
                 // If the maximum number of steps N_max is reached, exit the walk
                 if (N_max == thresholds[i]) {
@@ -143,6 +281,5 @@ void Configuration::RW_LR()
                 }
             }
         }
-    }    
-
+    }
 }

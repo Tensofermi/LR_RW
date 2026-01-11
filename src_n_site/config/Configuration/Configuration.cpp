@@ -12,31 +12,17 @@ void Configuration::initialConf()
 {
     //--- Initialize Basic Parameters
     Dim = para.D;
-    L = para.L;  // Maximum length of the random walk
+    N_max = para.N;  // Maximum length of the random walk
     Sigma = para.sigma;
 
-    // Latt.set(Dim, L);
-    
-    N_max = 1.0 * L * L;
-
+    string_head.resize(Dim, 0);
     length_string = 0;
 
-    xc = ceil(L / 2.0) - 1;
-    yc = ceil(L / 2.0) - 1;
-
-    string_head.resize(Dim, xc);
 }
 
 void Configuration::initialMeas()
 {
-    k_cos.resize(L);
-    k_sin.resize(L);
 
-    for (int i = 0; i < L; i++)
-    {
-        k_cos[i] = cos(2 * M_PI / (double)L * i);
-        k_sin[i] = sin(2 * M_PI / (double)L * i);
-    }
 
 }
 
