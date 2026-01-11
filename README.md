@@ -39,7 +39,6 @@ Lévy flights play an important role in various physical and biological systems,
     ./run.sh
     ```
 
-4. **For advanced simulations**, including job submissions on HPC systems, refer to the `/lsub`, `/qsub`, and `/data` directories in our related project:  
-   [Zoo_of_Classical_ON_Spin_Model](https://github.com/Tensofermi/Zoo_of_Classical_ON_Spin_Model)
+4. **For advanced simulations**, including job submissions on HPC systems, refer to the `/lsub`, `/qsub`, and `/data` directories in our related project: [Zoo_of_Classical_ON_Spin_Model](https://github.com/Tensofermi/Zoo_of_Classical_ON_Spin_Model)
 
 
